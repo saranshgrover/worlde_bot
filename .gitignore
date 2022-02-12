@@ -1,0 +1,7 @@
+node_modules
+.env
+score.json
+config.json
+src/.env
+src/score.json
+src/config.json
