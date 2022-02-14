@@ -100,7 +100,7 @@ const writeScoreBoardToFile = () => {
     })
 }
 
-const updateScoreBoardScore = (userid: any, points: number, increment: boolean) => {
+const updateScoreBoardScore = (userid: any, points: number, increment: boolean,number: number) => {
 
     // create a new scoreboard entry
     if (!scoreboard[userid]) {
@@ -108,8 +108,10 @@ const updateScoreBoardScore = (userid: any, points: number, increment: boolean) 
 
         scoreboard[userid][0] = points;
         scoreboard[userid][1] = 1;
-    } else {
+        scoreboard[userid][2] = number;
+    } else if(scoreboard[userid][2] !== number) {
         scoreboard[userid][0] += points;
+        scoreboard[userid][2] = number;
         if (increment)
             scoreboard[userid][1]++;
     }
@@ -221,9 +223,9 @@ const generateScoreBoardEmbed = (title: string) => {
         .setURL('https://www.powerlanguage.co.uk/wordle/')
         .setDescription('https://www.powerlanguage.co.uk/wordle/')
         .addFields(
-            { name: 'User', value: userListEmbed, inline: true },
-            { name: 'Score', value: scoreListEmbed, inline: true },
-            { name: 'Avg', value: averageListEmbed, inline: true }
+            { name: 'User', value: userListEmbed ?? "none", inline: true },
+            { name: 'Score', value: scoreListEmbed ?? "none", inline: true },
+            { name: 'Avg', value: averageListEmbed ?? "none", inline: true }
         );
 
     return {
@@ -255,21 +257,21 @@ client.on('messageCreate', (message) => {
     const isAdmin = message.member?.permissions.has("ADMINISTRATOR");
 
     // Check for Wordle Score
-    const wordleRegex = /Wordle \d{3} ([\dX])\/6\*?\n{0,2}[⬛🟩🟨⬜🟧🟦]{5}/;
+    const wordleRegex = /Wordle (\d{3}) ([\dX])\/6\*?\n{0,2}[⬛🟩🟨⬜🟧🟦]{5}/;
     const wordleMessage = message.content.match(wordleRegex);
-
     if (wordleMessage) {
         console.log(wordleMessage);
         console.log(message.author);
         // Check if X/6
         let wordleScore;
-        if (wordleMessage[1] == 'X') {
+        console.log(wordleMessage[2])
+        if (wordleMessage[2] == 'X') {
             wordleScore = 0;
         } else {
-            wordleScore = 7 - parseInt(wordleMessage[1]);
+            wordleScore = 7 - parseInt(wordleMessage[2]);
         }
 
-        const updatedScore = updateScoreBoardScore(message.author.id, wordleScore, true);
+        const updatedScore = updateScoreBoardScore(message.author.id, wordleScore, true, parseInt(wordleMessage[1]));
 
         // reply with score
         message.reply({
@@ -280,8 +282,12 @@ client.on('messageCreate', (message) => {
 
     // leaderboard command
     if (message.content === '!w scores') {
+        console.log(scoreboard)
+        console.log(scoreboard === {})
+        if(scoreboard !== {}) {
         const leaderboardEmbed = generateScoreBoardEmbed('LEADERBOARD');
         message.channel.send({ embeds: [leaderboardEmbed.embed] });
+        }
     }
 
     // fun LOTR stories
@@ -315,7 +321,7 @@ client.on('messageCreate', (message) => {
                 console.log(updateParse);
                 const userid = updateParse[1];
                 const score = parseInt(updateParse[2]);
-                const updatedScore = updateScoreBoardScore(userid, score, false);
+                const updatedScore = updateScoreBoardScore(userid, score, false, 0);
 
                 // reply with score
                 message.channel.send({
